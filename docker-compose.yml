@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  airflow-init:
+    image: apache/airflow:2.6.1
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__WEBSERVER__RBAC: 'true'
+      AIRFLOW__WEBSERVER__SECRET_KEY: 'J+my5H8Y0Tt7S8m9w4=='  # clef secrète
+    entrypoint: >
+      /bin/bash -c "airflow db init && airflow users create --username exauce --firstname Airflow --lastname Admin --role Admin --email admin@example.com --password exauce"
+
+  airflow-webserver:
+    image: apache/airflow:2.6.1
+    depends_on:
+      - airflow-init
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__WEBSERVER__RBAC: 'true'
+      AIRFLOW__WEBSERVER__SECRET_KEY: 'J+my5H8Y0Tt7S8m9w4=='  # clef secrète
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "pip install -r /requirements.txt && airflow webserver"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - /Users/macbookpro/Documents/COURS/TraitementDuSon/tpnote:/opt/airflow/scripts  # Montage des scripts
+      - ./requirements.txt:/requirements.txt
+
+  airflow-scheduler:
+    image: apache/airflow:2.6.1
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__WEBSERVER__RBAC: 'true'
+      AIRFLOW__WEBSERVER__SECRET_KEY: 'J+my5H8Y0Tt7S8m9w4=='  # clef secrète
+    command: >
+      bash -c "pip install -r /requirements.txt && airflow scheduler"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - /Users/macbookpro/Documents/COURS/TraitementDuSon/tpnote:/opt/airflow/scripts  # Montage des scripts
+      - ./requirements.txt:/requirements.txt
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181  # Assurez-vous que Zookeeper utilise bien ce port
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092  # Adresse locale utilisée par Kafka
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092  # Adresse utilisée pour les clients Kafka
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Doit être 1 pour un seul broker
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+
+volumes:
+  postgres_data:
+  kafka_data:

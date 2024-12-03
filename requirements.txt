@@ -1,0 +1,5 @@
+kafka-python
+pandas
+librosa
+psycopg2-binary
+soundfile
