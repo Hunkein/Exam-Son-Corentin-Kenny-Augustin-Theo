@@ -20,3 +20,15 @@
 
 * Fichier RENDU-2.ipynb
 
+## Structure du répertoire nécessaire pour exécuter
+
+```
+/
+├── data/
+│   └── Respiratory_Sound_Database
+|       └── audio_and_txt_files
+├   └── segments
+|   └──data_generated
+├── readme.md
+├── RENDU-1.ipynb
+└── RENDU-2.ipynb
