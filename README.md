@@ -20,7 +20,7 @@
 
 * Fichier RENDU-2.ipynb
 
-## Structure du répertoire nécessaire pour exécuter
+## Structure minimun du répertoire nécessaire pour exécuter
 
 ```
 /
